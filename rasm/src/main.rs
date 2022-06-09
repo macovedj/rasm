@@ -1,11 +1,26 @@
+#![warn(rust_2018_idioms)]
+#![feature(iter_advance_by)]
+use std::fs;
+use std::str;
+use regex::Regex;
 mod tokens;
 mod parser;
+mod ast;
+mod compiler;
 
 fn main() {
-    println!("Hello, world!");
-    println!("In file {}", "./add4.wat");
+    let contents = fs::read_to_string("./add4.wat")
+        .expect("Something went wrong reading the file");
+  
+    let oneline: String = str::replace(&contents, "\n", "");
+    let re = Regex::new(r"\s+").unwrap();
+    let text = re.replace_all(&oneline, " ");
+    let chars = text.trim();
+    let mut parsed = parser::parse(&chars);
+    let ast = ast::ast_builder(parsed);
 
-    parser::parse("./add4.wat");
+    let bytes = compiler::compiler(ast);
 
-    println!("TOKENS{:?}", tokens::tokenTypes::LPAR);
+
+    println!("WASM {}", bytes);
 }

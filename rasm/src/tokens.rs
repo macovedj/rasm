@@ -1,5 +1,6 @@
 #[derive(Debug)]
-pub enum tokenTypes {
+#[derive(Clone)]
+pub enum TokenTypes {
   LPAR,
   RPAR,
   MOD,
@@ -13,8 +14,4 @@ pub enum tokenTypes {
   ADD_I32,
   DATA,
   LOAD_U8
-}
-
-pub enum tokenVals {
-  module
 }
