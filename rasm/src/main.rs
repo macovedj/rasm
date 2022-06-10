@@ -16,11 +16,13 @@ fn main() {
     let re = Regex::new(r"\s+").unwrap();
     let text = re.replace_all(&oneline, " ");
     let chars = text.trim();
-    let mut parsed = parser::parse(&chars);
+    let parsed = parser::parse(&chars);
     let ast = ast::ast_builder(parsed);
 
     let bytes = compiler::compiler(ast);
+    println!("BYTES {:?}", bytes);
+    let hex = bytes.iter().map(|x| format!("{:#04x}", x)).collect::<Vec<_>>();
 
 
-    println!("WASM {}", bytes);
+    println!("HEX {:?}", hex);
 }

@@ -13,19 +13,19 @@ pub enum WasmPrimitives {
 
 // #[derive(Serialize, Deserialize, Debug)]
 #[derive(Clone, Debug)]
-pub struct Func<'a> {
-  pub export: &'a str,
+pub struct Func {
+  pub export: String,
   pub params: Vec<WasmPrimitives>,
-  pub body: Vec<&'a str>,
+  pub body: Vec<String>,
   pub result: WasmPrimitives
 }
 
-impl<'a> Func<'a> {
+impl Func {
   fn add_param(&mut self, param: WasmPrimitives) {
     self.params.push(param);
   }
 
-  fn add_to_body(&mut self, instr: &'a str) {
+  fn add_to_body(&mut self, instr: String) {
     self.body.push(instr);
   }
 
@@ -36,23 +36,23 @@ impl<'a> Func<'a> {
 
 // #[derive(Serialize, Deserialize, Debug)]
 #[derive(Debug)]
-pub struct WasmModule<'a> {
-  pub funcs: Vec<Func<'a>>
+pub struct WasmModule {
+  pub funcs: Vec<Func>
 }
 
 // #[derive(Serialize, Deserialize, Debug)]
 #[derive(Debug)]
-pub struct Ast<'a> {
-  pub mods: Vec<WasmModule<'a>>
+pub struct Ast {
+  pub mods: Vec<WasmModule>
 }
 
-pub fn ast_builder(tokens: Vec<parser::Token<'_>>) -> Ast {
-  let tok_slice = &tokens[..];
-  let mut ast = Ast { mods: Vec::new()};
+pub fn ast_builder(tokens: Vec<parser::Token>) -> Ast {
+  // let tok_slice = tokens[..];
+  let mut ast: Ast = Ast { mods: Vec::new()};
   let mut cur_module: usize = 0;
   let mut index = 0;
-  while (index < tok_slice.len()) {
-    match(tok_slice[index].kind) {
+  while index < tokens.len() {
+    match tokens[index].kind {
       tokens::TokenTypes::LPAR => {
         index += 1;
         continue;
@@ -71,16 +71,17 @@ pub fn ast_builder(tokens: Vec<parser::Token<'_>>) -> Ast {
         let mut cur_func: Func;
         func_def = true;
         cur_func = Func {
-          export: "",
+          export: String::from(""),
           params: Vec::new(),
           body: Vec::new(),
           result: WasmPrimitives::NULL
         };
         index += 1;
         while func_def {
-          match tok_slice[index].kind {
+          match tokens[index].kind {
             tokens::TokenTypes::EXPORT => {
-              cur_func.export = tok_slice[index + 1].value;
+              let ref export = tokens[index + 1].value;
+              cur_func.export = String::from(export);
               index += 2;
             }
             tokens::TokenTypes::RPAR => {
@@ -92,8 +93,8 @@ pub fn ast_builder(tokens: Vec<parser::Token<'_>>) -> Ast {
               continue;
             }
             tokens::TokenTypes::PARAMDECL => {
-              while matches!(tok_slice[index + 1].kind, tokens::TokenTypes::PARAM) {
-                if tok_slice[index + 1].value == "i32" {
+              while matches!(tokens[index + 1].kind, tokens::TokenTypes::PARAM) {
+                if tokens[index + 1].value == "i32" {
                   cur_func.add_param(WasmPrimitives::i32);
                   index += 1;
                 } else {
@@ -108,8 +109,9 @@ pub fn ast_builder(tokens: Vec<parser::Token<'_>>) -> Ast {
               index += 3;
             }
             _ => {
-              while !matches!(tok_slice[index].kind, tokens::TokenTypes::RPAR) {
-                cur_func.add_to_body(&tok_slice[index].value);
+              while !matches!(tokens[index].kind, tokens::TokenTypes::RPAR) {
+                let ref instr = tokens[index].value;
+                cur_func.add_to_body(String::from(instr));
                 index += 1;
               }
              index += 1;
