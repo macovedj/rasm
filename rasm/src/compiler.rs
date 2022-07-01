@@ -12,6 +12,7 @@ pub fn compiler(ast: ast::Ast) -> Vec<u8> {
   bytes.push(0x01);
   bytes.push(0x00);
   bytes.push(0x00);
+  bytes.push(0x00);
   bytes.push(0x01);
   let num_of_sections: u8 = ast.mods[0].funcs.len().try_into().unwrap();
   let funcs = &ast.mods[0].funcs[..];

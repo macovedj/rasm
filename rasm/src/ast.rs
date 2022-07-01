@@ -46,8 +46,8 @@ pub struct Ast {
   pub mods: Vec<WasmModule>
 }
 
-pub fn ast_builder(tokens: Vec<parser::Token>) -> Ast {
-  // let tok_slice = tokens[..];
+pub fn ast_builder(tokens: impl Iterator<Item = parser::Token>) -> Ast {
+  let tokens: Vec<_> = tokens.collect();
   let mut ast: Ast = Ast { mods: Vec::new()};
   let mut cur_module: usize = 0;
   let mut index = 0;
