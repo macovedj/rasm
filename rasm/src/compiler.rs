@@ -1,6 +1,3 @@
-use std::ascii::AsciiExt;
-
-use super::tokens;
 use super::ast;
 
 pub fn compiler(ast: ast::Ast) -> Vec<u8> {
