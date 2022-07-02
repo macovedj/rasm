@@ -46,25 +46,21 @@ pub struct Ast {
   pub mods: Vec<WasmModule>
 }
 
-pub fn ast_builder(tokens: impl Iterator<Item = parser::Token>) -> Ast {
-  let tokens: Vec<_> = tokens.collect();
-  let mut ast: Ast = Ast { mods: Vec::new()};
+pub fn ast_builder(mut tokens: impl Iterator<Item = parser::Token>) -> Ast {
+  let mut ast: Ast = Ast { mods: Vec::new() };
   let mut cur_module: usize = 0;
-  let mut index = 0;
-  while index < tokens.len() {
-    match tokens[index].kind {
+  while let Some(mut token) = tokens.next() {
+    match token.kind {
       tokens::TokenTypes::LPAR => {
-        index += 1;
         continue;
       }
       tokens::TokenTypes::RPAR => {
-        index += 1;
         continue;
       }
       tokens::TokenTypes::MOD => {
         cur_module = ast.mods.len();
         ast.mods.push(WasmModule {funcs: Vec::new()});
-        index += 1;
+        continue;
       }
       tokens::TokenTypes::FUNC => {
         let mut func_def: bool;
@@ -76,45 +72,69 @@ pub fn ast_builder(tokens: impl Iterator<Item = parser::Token>) -> Ast {
           body: Vec::new(),
           result: WasmPrimitives::NULL
         };
-        index += 1;
+        tokens.next();
+        if let Some(potential_token) = tokens.next() {
+          token = potential_token;
+        };
         while func_def {
-          match tokens[index].kind {
+          match token.kind {
             tokens::TokenTypes::EXPORT => {
-              let ref export = tokens[index + 1].value;
-              cur_func.export = String::from(export);
-              index += 2;
+              if let Some(next_token) = tokens.next() {
+                let ref export = next_token.value;
+                cur_func.export = String::from(export);
+                if let Some(potential_token) = tokens.next() {
+                  token = potential_token;
+                };
+              };
+              continue;
             }
             tokens::TokenTypes::RPAR => {
-              index += 1;
+              if let Some(potential_token) = tokens.next() {
+                token = potential_token;
+              };
               continue;
             }
             tokens::TokenTypes::LPAR => {
-              index += 1;
+              if let Some(potential_token) = tokens.next() {
+                token = potential_token;
+              };
               continue;
             }
             tokens::TokenTypes::PARAMDECL => {
-              while matches!(tokens[index + 1].kind, tokens::TokenTypes::PARAM) {
-                if tokens[index + 1].value == "i32" {
-                  cur_func.add_param(WasmPrimitives::i32);
-                  index += 1;
-                } else {
-                  index += 1;
+              if let Some(mut next_token) = tokens.next() {
+                while matches!(next_token.kind, tokens::TokenTypes::PARAM) {
+                  if next_token.value == "i32" {
+                    cur_func.add_param(WasmPrimitives::i32);
+                  }
+                  if let Some(potential_token) = tokens.next() {
+                    next_token = potential_token;
+                  } 
                   continue;
                 }
-              }
-              index += 2;
+                if let Some(potential_token) = tokens.next() {
+                  token = potential_token;
+                };
+                continue;
+              };
             }
             tokens::TokenTypes::RESULT => {
               cur_func.modify_result(WasmPrimitives::i32);
-              index += 3;
+              tokens.next();
+              tokens.next();
+              if let Some(potential_token) = tokens.next() {
+                token = potential_token;
+              };
+              continue;
             }
             _ => {
-              while !matches!(tokens[index].kind, tokens::TokenTypes::RPAR) {
-                let ref instr = tokens[index].value;
+              while !matches!(token.kind, tokens::TokenTypes::RPAR) {
+                let ref instr = token.value;
                 cur_func.add_to_body(String::from(instr));
-                index += 1;
+                if let Some(potential_token) = tokens.next() {
+                  token = potential_token;
+                };
               }
-             index += 1;
+              tokens.next();
               func_def = false;
               ast.mods[cur_module].funcs.push(cur_func);
               break;
