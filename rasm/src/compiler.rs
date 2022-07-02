@@ -68,7 +68,7 @@ pub fn compiler(ast: ast::Ast) -> Vec<u8> {
       }
       bytes.push(export.len().try_into().unwrap());
       for char in export.bytes() {
-        if char > 97 {
+        if char >= 97 {
           bytes.push(char.to_ascii_lowercase());
         } else {
           bytes.push(char.to_ascii_uppercase());

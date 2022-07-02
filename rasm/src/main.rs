@@ -20,7 +20,6 @@ fn main() -> std::io::Result<()> {
     let parsed = parser::Parser::new(chars);
     let ast = ast::ast_builder(parsed);
 
-    println!("THE AST {:?}", ast);
     let bytes = compiler::compiler(ast);
     let hex = bytes.iter().map(|x| format!("{:x}", x)).collect::<Vec<_>>().join("");
     let mut file = fs::File::create("add4.wasm")?;
