@@ -1,27 +1,19 @@
 use super::ast;
 
-pub fn compiler(ast: ast::Ast) -> Vec<u8> {
-  let mut bytes = Vec::new();
-  bytes.push(0x00);
-  bytes.push(0x61);
-  bytes.push(0x73);
-  bytes.push(0x6d);
-  bytes.push(0x01);
-  bytes.push(0x00);
-  bytes.push(0x00);
-  bytes.push(0x00);
-  bytes.push(0x01);
-  let num_of_sections: u8 = ast.mods[0].funcs.len().try_into().unwrap();
-  let funcs = &ast.mods[0].funcs[..];
-  let type_section_size: u8 = (funcs.into_iter()
-  .fold(0, |acc, cur| acc + 4 + cur.params.len()) + 1).try_into().unwrap();
-  bytes.push(type_section_size);
-  bytes.push(num_of_sections);
-  for func in funcs {
+struct Sig<'a> {
+  params: &'a [ast::WasmPrimitives],
+  result: ast::WasmPrimitives,
+}
+
+impl <'a> Sig<'a> {
+  pub fn new(func: &'a ast::Func) -> Self {
+    Sig { params: &func.params[..], result: func.result }
+  }
+
+  pub fn write(&self, bytes: &mut Vec<u8>) {
     bytes.push(0x60);
-    let params = &func.params[..];
-    bytes.push(params.len().try_into().unwrap());
-    for param in params {
+    bytes.push(self.params.len() as u8);
+    for param in &self.params[..] {
       match param {
         ast::WasmPrimitives::i32 => {
           bytes.push(0x7f);
@@ -33,14 +25,38 @@ pub fn compiler(ast: ast::Ast) -> Vec<u8> {
     }
     // number of return values
     bytes.push(0x01);
-    match func.result {
+    match &self.result {
       ast::WasmPrimitives::i32 => {
-        bytes.push(0x7f)
+        bytes.push(0x7f);
       }
-      _ => {
-        continue;
-      }
-    }
+      _ => {}
+    } 
+  }
+}
+
+pub fn compiler(ast: ast::Ast) -> Vec<u8> {
+  let mut bytes = Vec::new();
+  bytes.push(0x00);
+  bytes.push(0x61);
+  bytes.push(0x73);
+  bytes.push(0x6d);
+  bytes.push(0x01);
+  bytes.push(0x00);
+  bytes.push(0x00);
+  bytes.push(0x00);
+  bytes.push(0x01);
+  let funcs = &ast.mods[0].funcs[..];
+  let mut sigs = Vec::new();
+  for func in funcs {
+    sigs.push(Sig::new(func));
+  }
+  let num_of_types = sigs.len();
+  let type_section_size: u8 = (&sigs[..].into_iter()
+  .fold(0, |acc, cur| acc + 4 + cur.params.len()) + 1).try_into().unwrap();
+  bytes.push(type_section_size);
+  bytes.push(num_of_types as u8);
+  for sig in &sigs {
+    sig.write(&mut bytes);
   }
   bytes.push(0x03);
   bytes.push((funcs.len() + 1).try_into().unwrap());

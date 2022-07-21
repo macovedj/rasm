@@ -2,7 +2,7 @@ use super::parser;
 use super::tokens;
 
 // #[derive(Serialize, Deserialize, Debug, Clone)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub enum WasmPrimitives {
   i32,
   i64,
@@ -80,7 +80,7 @@ pub fn ast_builder(mut tokens: impl Iterator<Item = parser::Token>) -> Ast {
           match token.kind {
             tokens::TokenTypes::EXPORT => {
               if let Some(next_token) = tokens.next() {
-                let ref export = next_token.value;
+                let export = &next_token.value;
                 cur_func.export = String::from(export);
                 if let Some(potential_token) = tokens.next() {
                   token = potential_token;
