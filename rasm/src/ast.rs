@@ -2,7 +2,7 @@ use super::parser;
 use super::tokens;
 
 // #[derive(Serialize, Deserialize, Debug, Clone)]
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub enum WasmPrimitives {
   i32,
   i64,

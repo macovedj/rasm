@@ -1,5 +1,6 @@
 use super::ast;
 
+#[derive(PartialEq, Eq)]
 struct Sig<'a> {
   params: &'a [ast::WasmPrimitives],
   result: ast::WasmPrimitives,
@@ -59,12 +60,15 @@ pub fn compiler(ast: ast::Ast) -> Vec<u8> {
     sig.write(&mut bytes);
   }
   bytes.push(0x03);
-  bytes.push((funcs.len() + 1).try_into().unwrap());
-  bytes.push(funcs.len().try_into().unwrap());
-  let mut sig = 0;
-  while sig < funcs.len() {
-    bytes.push(sig.try_into().unwrap());
-    sig += 1;
+  let num_of_funcs = funcs.len() as u8;
+  bytes.push(num_of_funcs + 1);
+  bytes.push(num_of_funcs);
+  for func in funcs {
+    for (i, sig) in sigs.iter().enumerate() {
+      if sig == &Sig::new(&func) {
+        bytes.push(i as u8);
+      }
+    }
   }
 
   let num_of_exports = funcs.into_iter()
